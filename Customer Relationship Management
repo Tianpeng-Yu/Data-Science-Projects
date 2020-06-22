@@ -108,3 +108,76 @@ Net_Value_OG
 # The potential benefit gained from spending the $1.5 million,based on ou model, is...
 CLVswitchers2 - CLVswitchers_OG
 # $49,287,523.
+
+
+
+
+
+library(tidyverse)
+Trip_Data<-read.csv(file='HW3_Data.csv', header = TRUE,sep=",")
+summary(Trip_Data)
+
+###Predict Probability of Acquisition
+
+#Original Probit model(Predicting probability of acquisition)...
+Probit_BW <- glm(Chose.BW ~ Score + Reviews + Price + Position, family=binomial(link = 'probit'), data = Trip_Data)
+summary(Probit_BW)
+
+#Select non-customers and change the OTA position to 1...
+NotBW <- subset(Trip_Data, Trip_Data$Chose.BW == 0)
+NotBW_Updated <- NotBW
+NotBW_Updated$Position <- 1
+
+#Predict the probability and Z-scores for non-customers...
+NotBW$zscore <- predict(Probit_BW, newdata = NotBW)
+NotBW_Updated$zscore <- predict(Probit_BW, newdata = NotBW_Updated)
+NotBW$prob <- predict(Probit_BW, newdata = NotBW, type = 'response')
+NotBW_Updated$prob <- predict(Probit_BW, newdata = NotBW_Updated, type = 'response')
+#data.frame(NotBW$zscore,NotBW_Updated$zscore)
+#data.frame(NotBW$prob,NotBW_Updated$prob)
+
+
+###Predict Charges for Non-customers...
+#Calcule IMR to remove selection bias...
+Trip_Data$IMR <- dnorm(Probit_BW$linear.predictors)/(pnorm(Probit_BW$linear.predictors))
+
+#Build a linear regression model to predict charges...
+Charges_lm <- lm(Charge.Per.Night~Credit+Business, data = subset(Trip_Data, Chose.BW ==1))
+#summary(Charges_lm)
+
+#Include IMR in the model to predict charges without selection bias...
+Charges_bias_lm <- lm(Charge.Per.Night ~ Credit + Business + IMR, data = subset(Trip_Data, Chose.BW == 1))
+#summary(Charges_bias_lm)
+
+#Calculate IMR for non-customers before updating the OTA position and make predictions...
+NotBW$IMR <- dnorm(NotBW$zscore)/pnorm(NotBW$zscore)
+NotBW$charges <- predict(Charges_bias_lm, newdata = NotBW)
+
+#Calculate IMR for non-customers after updating the OTA position and make predictions...
+NotBW_Updated$IMR <- dnorm(NotBW_Updated$zscore)/pnorm(NotBW_Updated$zscore)
+NotBW_Updated$charges <- predict(Charges_bias_lm, newdata = NotBW_Updated)
+
+
+###Calculate CLV\
+alpha<-.7 #retention
+OTA_Fee<-.3
+Price_BW <- 332 #Price on TripAdvisor
+Margin<-.5
+Discount<-.1
+Margin_Multiplier <- alpha/(1+Discount-alpha)
+
+#Calculate CLV based on our current OTA position...
+NotBW$CLV<-NotBW$prob*(Price_BW*(1-OTA_Fee)+NotBW$charges)*2*Margin*Margin_Multiplier
+
+#Calculate CLV after updating the OTA position...
+NotBW_Updated$CLV<-NotBW_Updated$prob*(Price_BW*(1-OTA_Fee)+NotBW_Updated$charges)*2*Margin*Margin_Multiplier
+
+#Calculate final profit...
+Profit <- sum(NotBW_Updated$CLV) - sum(NotBW$CLV) - 5000000
+
+###Recommendation
+#Since the new CLV is larger than the original CLV, and the profit is positive,
+#We would recommend BW to purchase the first position.
+
+
+
