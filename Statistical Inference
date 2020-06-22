@@ -1,0 +1,193 @@
+library(ggplot2)
+raw <- read.csv("RawData1.csv")
+lm1 <- lm(Y~X, data = raw)
+summary(lm1)
+lm1$fitted.values
+plot(raw)
+lirary(aar"")
+t-stat = 3.2911/0.6012
+library(car)
+b <- pt()
+
+library(readxl)
+raw2 <- read_xlsx("RawData2.xlsx")
+lm2 <- lm(price~bedrooms + sqft_living, data = raw2)
+summary(lm2)
+linearHypothesis(lm2,500)
+
+#load the bm data and divide them into two groups of black and white
+bm <- foreign::read.dta("bm.dta")
+b0 <- bm[which(bm$black == 0), ]
+b1 <- bm[which(bm$black == 1), ]
+summary(b0)
+summary(b1)
+#compare the mean and construct t-test between variables of two groups
+t.test(b0$education, b1$education)
+t.test(b0$ofjobs, b1$ofjobs)
+t.test(b0$yearsexp, b1$yearsexp)
+t.test(b0$computerskills, b1$computerskills)
+t.test(b0$female, b1$female)
+
+t.test(b0$call, b1$call)
+
+library("tidyverse")
+library("broom")
+library("haven")
+library("rlang")
+library("clubSandwich")
+
+devtools::install_github("jrnold/masteringmetrics", subdir = "masteringmetrics")
+data(bm, package = "masteringmetrics")
+race <- count(bm, black)
+knitr::kable(black)
+
+
+cluster_se <- function(mod, cluster, type = "CR2") {
+  vcov <- vcovCR(mod, cluster = cluster, type = type)
+  coef_test(mod, vcov = vcov) %>%
+    rownames_to_column(var = "term") %>%
+    as_tibble() %>%
+    select(term, estimate = beta, std.error = SE)
+}
+
+varlist <- c("education","ofjobs","yearsexp","computerskills","female","black")
+black_stats <- bm %>%
+  filter(black == 0) %>%
+  select(one_of(varlist)) %>%
+  gather(variable, value) %>%
+  group_by(variable) %>%
+  summarise(Mean = mean(value, na.rm = TRUE),
+            `Std. Dev.` = sd(value, na.rm = TRUE))
+knitr::kable(black_stats, digits = 3)
+calc_diffs <- function(x) {
+  # programmatically create the formula for lm
+  f <- quo(!!sym(x) ~ black)
+  mod <- lm(f, data = bm)  # nolint
+  out <- cluster_se(mod, cluster = bm[["fam_identifier"]])
+  out[["response"]] <- x
+  out
+}
+black_diffs <- map_dfr(varlist, calc_diffs) %>%
+  select(response, term, estimate, std.error) %>%
+  mutate(term = str_replace(term, "^black", ""))
+
+
+#3
+#a
+#load the cps data 
+cps <- foreign::read.dta("cps.dta")
+View(cps)
+#add a new colume based on education and divide them into 0 and 1
+cps$educationnew <- case_when(
+  cps$education >= 3 ~ 1,
+  cps$education >= 0 ~ 0
+  )
+#the fraction of respondents have at least some college education
+mean(cps$educationnew)
+#b
+c0 <- cps[which(cps$black == 0), ]
+c1 <- cps[which(cps$black == 1), ]
+summary(c0)
+summary(c1)
+#compare the mean and construct t-test between dummy variable of two groups
+t.test(c0$educationnew, c1$educationnew)
+t.test(c0$ofjobs, c1$ofjobs)
+t.test(c0$yearsexp, c1$yearsexp)
+t.test(c0$employed, c1$employed)
+t.test(c0$female, c1$female)
+
+#Q5
+badboys_dataset <- read.csv("badboys_dataset.csv")
+view(bad)
+bad1 <- bad[which(bad$main == 1), c("treatment","coinwin","del3","del1","del2","del4","del5","yearsinprison","age")]
+summary(bad1)
+a <- aggregate(bad1,by=list(bad1$treatment), mean, na.rm=TRUE)
+b <- aggregate(bad1,by=list(bad1$treatment), var, na.rm=TRUE)
+c <- aggregate(bad1,by=list(bad1$treatment), length)
+tableA1 <- data.frame(var_name = numeric(0),
+                      ts_mean = numeric(0), 
+                      ts_sd = numeric(0), 
+                      ci_mean = numeric(0),
+                      ci_sd = numeric(0),
+                      c_mean = numeric(0), 
+                      c_sd = numeric(0),
+                      given_p_val = numeric(0),
+                      calc_mean_diff = numeric(0),
+                      calc_se = numeric(0),
+                      calc_t_stat = numeric(0),
+                      calc_p_val = numeric(0))
+for(i in c("del3","del1","del2","del4","del5","yearsinprison","age")){unpooledt <- t.test(mydata[[i]] ~ mydata$treatment)
+if(i=="yearsinprison" | i=="age"){
+  chisq <- wilcox.test(mydata[[i]]~mydata$treatment)
+  }
+else{
+  chisq <- chisq.test(mydata[[i]], mydata$treatment, correct = FALSE)
+}
+afb <- chisq.test(bad1$del1, bad1$treatment, correct = FALSE)
+ash <- wilcox.test(bad1$age~bad1$treatment)
+ash
+
+library("tidyverse")
+#Only select those who participated in main experiment
+total <- badboys_dataset %>%
+  filter(badboys_dataset$main == 1)
+#divide into two groups: control and criminal
+control <- badboys_dataset %>%
+  filter(badboys_dataset$main == 1 & badboys_dataset$treatment == 0)
+
+criminal <- badboys_dataset %>%
+  filter(badboys_dataset$main == 1 & badboys_dataset$treatment == 1)
+#create headings for the table
+heading <- c('del3', 'del1', 'del2', 'del4', 'del5', 'yearsinprison', 'age')
+bad1 <- bad[which(bad$main == 1), c("treatment","coinwin","del3","del1","del2","del4","del5","yearsinprison","age")]
+t.test(bad1$coinwin ~ bad1$treatment)
+t.test(control$lifesatisfaction,criminal$lifesatisfaction)
+
+#calculate different variables' value in the table
+ts_mean <- c(mean(total$del3) , mean(total$del1),  mean(total$del2),  mean(total$del4),  
+             mean(total$del5),  mean(total$yearsinprison),  mean(total$age, na.rm = TRUE))
+
+ts_sd <- c(sd(total$del3) , sd(total$del1),  sd(total$del2),  sd(total$del4),  
+           sd(total$del5),  sd(total$yearsinprison),  sd(total$age, na.rm = TRUE))
+
+ci_mean <- c(mean(criminal$del3), mean(criminal$del1), mean(criminal$del2), mean(criminal$del4),
+             mean(criminal$del5), mean(criminal$yearsinprison), mean(criminal$age, na.rm = TRUE))
+
+ci_sd <- c(sd(criminal$del3), sd(criminal$del1), sd(criminal$del2), sd(criminal$del4),
+           sd(criminal$del5), sd(criminal$yearsinprison), sd(criminal$age, na.rm = TRUE))
+
+c_mean <- c(mean(control$del3), mean(control$del1), mean(control$del2), mean(control$del4),
+            mean(control$del5), mean(control$yearsinprison), mean(control$age, na.rm = TRUE))
+
+c_sd <- c(sd(control$del3), sd(control$del1), sd(control$del2), sd(control$del4),
+          sd(control$del5), sd(control$yearsinprison), sd(control$age, na.rm = TRUE))
+
+#Calculate for chisq and wilcox p value
+given_p_val <- c(chisq.test(bad1$del3, bad1$treatment, correct = FALSE)$p.value,
+                chisq.test(bad1$del1, bad1$treatment, correct = FALSE)$p.value,
+                chisq.test(bad1$del2, bad1$treatment, correct = FALSE)$p.value,
+                chisq.test(bad1$del4, bad1$treatment, correct = FALSE)$p.value,
+                chisq.test(bad1$del5, bad1$treatment, correct = FALSE)$p.value,
+                wilcox.test(bad1$yearsinprison~bad1$treatment)$p.value,
+                wilcox.test(bad1$age~bad1$treatment)$p.value)
+
+calc_mean_diff <- c(c_mean[1]-ci_mean[1], c_mean[2]-ci_mean[2],c_mean[3]-ci_mean[3],
+                    c_mean[4]-ci_mean[4],c_mean[5]-ci_mean[5],c_mean[6]-ci_mean[6],c_mean[7]-ci_mean[7])
+
+calc_se <- c(t.test(control$del3, criminal$del3)$stderr, t.test(control$del1, criminal$del1)$stderr,
+                t.test(control$del2, criminal$del2)$stderr, t.test(control$del4, criminal$del4)$stderr,
+                t.test(control$del5, criminal$del5)$stderr, t.test(control$yearsinprison, criminal$yearsinprison)$stderr,
+                t.test(control$age, criminal$age)$stderr)
+
+calc_t_stat <- c(t.test(control$del3, criminal$del3)$statistic, t.test(control$del1, criminal$del1)$statistic,
+                t.test(control$del2, criminal$del2)$statistic, t.test(control$del4, criminal$del4)$statistic,
+                t.test(control$del5, criminal$del5)$statistic, t.test(control$yearsinprison, criminal$yearsinprison)$statistic,
+                t.test(control$age, criminal$age)$statistic)
+
+calc_p_val <- c(t.test(control$del3, criminal$del3)$p.value, t.test(control$del1, criminal$del1)$p.value,
+                t.test(control$del2, criminal$del2)$p.value, t.test(control$del4, criminal$del4)$p.value,
+                t.test(control$del5, criminal$del5)$p.value, t.test(control$yearsinprison, criminal$yearsinprison)$p.value,
+                t.test(control$age, criminal$age)$p.value)
+
+data.frame(heading,ts_mean,ts_sd,ci_mean, ci_sd, c_mean, c_sd, given_p_val, calc_mean_diff, calc_se, calc_t_stat, calc_p_val)
+
