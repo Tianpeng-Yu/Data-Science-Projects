@@ -1,0 +1,110 @@
+#####           Question 1          #####
+# First, lets import the dataset
+HW2.question.1 <- read.csv("C:/Users/melul/Downloads/HW2 question 1.csv")
+
+head(HW2.question.1)
+
+# Since we are trying to determine which factor is most determinant |(and therefore better suited for the investment of $1.5 million) 
+# in convincing painters to swtich to JD, we should use a logistic  |
+# regression to determine the influences and most profitable scheme |
+
+logit1 <-  glm(Purchased~., data = HW2.question.1, family = binomial('logit'))
+summary(logit1)
+
+newdata <- data.frame(Seconds_Ad_Watched=10,Searched_Product=1,Overall_Reviews=3)
+predict(logit1, newdata = newdata, type = 'response')
+# After spending the 5 million, we can expect the probability of a customer purchasing JD, is 0.3878
+
+# Since JD can spend up to $1.5 million, there are three options that could occur:
+# (1) Every additional second on average is $55,000... That translated to an increase of 27.27 seconds on average
+# (2) At $800k for each additional sie on average, you can increase the average site on average by 1.875
+# (3) 1 full star increase costs $1.25 million, meaning a 1.2 start increase 
+
+newdata2 <- data.frame(Seconds_Ad_Watched=37.27,Searched_Product=2.875,Overall_Reviews=4.2)
+predict(logit1, newdata = newdata2, type = 'response')
+# The above prediction represents the outcome if JD were to invest in ALL the options, with a P=0.9848..
+
+# Now let's compare between the options (we can also use logodds and exp())
+newdata_first <- data.frame(Seconds_Ad_Watched=37.27,Searched_Product=1, Overall_Reviews=3)
+predict(logit1, newdata = newdata_first, type = 'response')
+newdata_second <- data.frame(Seconds_Ad_Watched=10,Searched_Product=2.875, Overall_Reviews=3)
+predict(logit1, newdata = newdata_second, type = 'response')
+newdata_third <- data.frame(Seconds_Ad_Watched=10,Searched_Product=1, Overall_Reviews=4.2)
+predict(logit1, newdata = newdata_third, type = 'response')
+
+# As we can observe from the above, spending the $1.5 million in increasing their online rating would yield |
+# the highest probability that a customer would, on average, switch to JD. 
+
+# From Homework 1, Problem 4, we gathered that the market in which JD operates has 600 painters,
+# and that the CLV is 166,859. That is probably why it is so expensive to acquire a new customer,
+# the retention rate is really high. Based on the current market share of JD, 9.6% of the market,
+# we can determine that there are about 442 painters left in the area that do not work with JD.
+clv <- 166859
+
+# Calculation of remaining painters in the market
+marketsize <- 600-round((2.2/23)*600)
+# Therefore, the total benefit from spending the total $6.5 million is...
+res1 <- predict(logit1, newdata = newdata_third, type = 'response')
+switchers <- res1 *marketsize
+CLVswitchers <- clv*switchers
+CLVswitchers
+Net_Value <- CLVswitchers - 6500000
+Net_Value
+# The investment will return an expected value of $68,934,579 conditional on the prediction of the 
+# extra $1.5 million invested in pursuing the third option: increasing the rating. 
+# Therefore the net value is 62434579
+
+#####           Question 2            ######
+HW2.question.2 <- read.csv("C:/Users/melul/Downloads/HW2 question 2.csv")
+
+library(tidyverse)
+ggplot(HW2.question.2, aes(x = as.factor(Purchased), y = Samples_liter, fill =as.factor(Purchased)))+
+  geom_boxplot()
+# Notice that there seems to be a significant difference in the Sample quantity when the customer did purchased...
+ggplot(HW2.question.2, aes(x = Samples_liter, fill = as.factor(Purchased)))+
+  geom_histogram(binwidth = 0.4)
+
+# ANOVA
+fitANOVA <- aov(Purchased~., data = HW2.question.2)
+summary(fitANOVA)
+# These results suggest that the difference is significant
+# Meaning that the difference of the mean sample_liter for painters who purchased and those
+# who did not purchase is statistically significant, as well as those with large F values.
+
+# Now lets recreate the model we had already created including the samples each customer received
+logit2 <- glm(Purchased~., data = HW2.question.2, family = binomial('logit'))
+summary(logit2)
+# Now Searched_Product is not significant... note: we also excluded samples_liter_sq because we discovered it was overfitting once we ran the model
+logit3 <- glm(Purchased~.-Searched_Product-Samples_liter_Sq, data = HW2.question.2, family = binomial('logit'))
+summary(logit3)
+
+# Since they were investing $1.5 million and it costs $300k to increase the average sample levels by 1 liter,
+# they could increase a total of 5 liters (avg sample level). Therefore...
+newdata_adj <- data.frame(Seconds_Ad_Watched=10,Overall_Reviews=3, Searched_Product = 1,Samples_liter=4, Samples_liter_Sq=16)
+predict(logit3, newdata = newdata_adj, type = 'response')
+# Regular is above, at level when only $5 million were spent...
+newdata_adj2 <- data.frame(Seconds_Ad_Watched=10,Overall_Reviews=3, Searched_Product = 1,Samples_liter=9, Samples_liter_Sq=81)
+predict(logit3, newdata = newdata_adj2, type = 'response')
+
+# Therefore, the total benefit from spending the total $6.5 million is...
+res2 <- predict(logit3, newdata = newdata_adj2, type = 'response')
+switchers2 <- res2 *marketsize
+CLVswitchers2 <- clv*switchers2
+CLVswitchers2
+Spending <- 6500000
+Net_Value2 <- CLVswitchers2 - Spending
+Net_Value2
+
+# The total benefit predicted previously was $68,934,579
+# Now the total benefit predicted is $68,092,333
+# However, we know that the original prediction was not done through the appropiate measures....
+res_original <- predict(logit3, newdata = newdata_adj, type = 'response')
+switchers_OG <- res_original *marketsize
+CLVswitchers_OG <- clv*switchers_OG
+CLVswitchers_OG
+Net_Value_OG <- CLVswitchers_OG - 5000000
+Net_Value_OG
+
+# The potential benefit gained from spending the $1.5 million,based on ou model, is...
+CLVswitchers2 - CLVswitchers_OG
+# $49,287,523.
