@@ -1,0 +1,102 @@
+1. https://www.hackerrank.com/challenges/revising-the-select-query-1/submissions
+select  *
+from    CITY
+where   COUNTRYCODE = 'USA'
+and     POPULATION > 100000
+
+2. https://www.hackerrank.com/challenges/revising-the-select-query-2/submissions
+select  NAME
+from    CITY
+where   COUNTRYCODE = 'USA'
+and     POPULATION > 120000
+
+3.https://www.hackerrank.com/challenges/the-pads/problem
+select  concat(name, '(',substr(occupation,1,1),')')
+from    occupations
+order by name;
+
+SELECT  CONCAT('There are a total of ', COUNT(Occupation), ' ', LOWER(Occupation), 's.') 
+FROM    OCCUPATIONS 
+GROUP BY Occupation 
+ORDER BY COUNT(Occupation), Occupation;
+
+4. https://www.hackerrank.com/challenges/occupations/problem
+SET @r1=0, @r2=0, @r3 =0, @r4=0;
+SELECT MIN(Doctor), MIN(Professor), MIN(Singer), MIN(Actor) FROM
+(SELECT CASE Occupation WHEN 'Doctor' THEN @r1:=@r1+1
+                       WHEN 'Professor' THEN @r2:=@r2+1
+                       WHEN 'Singer' THEN @r3:=@r3+1
+                       WHEN 'Actor' THEN @r4:=@r4+1 END
+       AS RowLine,
+       CASE WHEN Occupation = 'Doctor' THEN Name END AS Doctor,
+       CASE WHEN Occupation = 'Professor' THEN Name END AS Professor,
+       CASE WHEN Occupation = 'Singer' THEN Name END AS Singer,
+       CASE WHEN Occupation = 'Actor' THEN Name END AS Actor
+       FROM OCCUPATIONS ORDER BY Name) AS t
+GROUP BY RowLine;
+
+5. https://www.hackerrank.com/challenges/binary-search-tree-1/problem
+select  n,case when p is null then 'Root'
+             when N in (select P from BST) then 'Inner' 
+             else 'Leaf' end as Node 
+from BST 
+order by n
+
+6. https://www.hackerrank.com/challenges/weather-observation-station-18/problem
+select  round((abs(a-c)+abs(b-d)),4)
+from (select    min(lat_n) as a,
+                min(long_w) as b,
+                max(lat_n) as c,
+                max(long_w) as d
+      from      station) as station2
+
+7. https://www.hackerrank.com/challenges/weather-observation-station-19/problem
+SELECT ROUND(SQRT(POW(MIN(LAT_N)-MAX(LAT_N), 2) + POW(MIN(LONG_W)-MAX(LONG_W), 2)), 4)
+from station
+
+8. https://www.hackerrank.com/challenges/weather-observation-station-20/problem
+select round(avg(s.LAT_N),4)
+from
+(select LAT_N, @curRank := @curRank + 1 as rank
+from STATION s, (select @curRank := 0) r
+order by LAT_N) s
+where s.rank in (floor(@curRank/2)+1, ceiling(@curRank/2))
+
+9. https://www.hackerrank.com/challenges/the-report/problem
+select  case when students.marks >= 70 then students.name
+        else NULL end,
+        grades.grade,
+        students.marks
+from    students
+left join grades
+on      students.marks between min_mark and max_mark
+order by grade desc, students.name, students.marks
+
+10. https://www.hackerrank.com/challenges/full-score/problem
+select h.hacker_id, h.name
+from submissions s
+inner join challenges c
+on s.challenge_id = c.challenge_id
+inner join difficulty d
+on c.difficulty_level = d.difficulty_level 
+inner join hackers h
+on s.hacker_id = h.hacker_id
+where s.score = d.score and c.difficulty_level = d.difficulty_level
+group by h.hacker_id, h.name
+having count(s.hacker_id) > 1
+order by count(s.hacker_id) desc, s.hacker_id asc
+
+11. https://www.hackerrank.com/challenges/harry-potter-and-wands/problem
+select  wands.id,
+        Wands_Property.age,
+        wands.coins_needed,
+        wands.power
+from    wands
+join    Wands_Property  on  wands.code=Wands_Property.code
+where   Wands_Property.is_evil = 0
+and     wands.coins_needed = (select min(coins_needed) 
+                              from Wands as w1 
+                              join Wands_Property as p1 on (w1.code = p1.code) 
+                              where w1.power = Wands.power and p1.age = Wands_Property.age)
+order by wands.power desc, Wands_Property.age desc
+
